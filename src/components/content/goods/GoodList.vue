@@ -27,7 +27,9 @@ export default {
 <style scoped>
   .goods {
     display: flex;
+    /*允许换行*/
     flex-wrap: wrap;
+    /*在弹性盒对象的 <div> 元素中的各项周围留有空白 */
     justify-content: space-around;
 
     padding: 2px;
