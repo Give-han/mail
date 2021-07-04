@@ -1,14 +1,21 @@
 <template>
 <div id="home">
   <nav-bar id="home-nav-bar"><div slot="center">购物街</div></nav-bar>
+  <tab-control v-show="isfix"
+               :titles="['流行','新款','精选']"
+               @tabClick="tabClick" ref="tabcontrol1"
+               class="table-control"></tab-control>
   <scroll class="content" ref="scroll1"
       :probeType="3" :pullUpLoad="true"
       @scrollposition="isShowB2T"
       @pullingUp="loadMore">
-    <home-swiper :banners="banner"></home-swiper>
+    <home-swiper :banners="banner" @swiperImgLoad="swiperImgLoad"></home-swiper>
     <home-recommend :recommend="recommond"></home-recommend>
     <feature-view/>
-    <tab-control class="table-control" :titles="['流行','新款','精选']" @tabClick="tabClick"></tab-control>
+    <tab-control :titles="['流行','新款','精选']"
+                 @tabClick="tabClick"
+                 ref="tabcontrol2">
+    </tab-control>
     <good-list :goods="showGoods"></good-list>
   </scroll>
 <!--  当你在这个标签上加@click事件的时候报错,原因是因为没有加上native,官网对于native的解释为:
@@ -29,6 +36,7 @@ import HomeRecommend from './childs/HomeRecommend'
 import FeatureView from './childs/FeatureView'
 
 import { getHomeMutiData, getHomeGoods } from '../../network/home.js'
+import { debounce } from '../../common/utils'
 
 export default {
   name: 'Home',
@@ -52,7 +60,9 @@ export default {
         sell: { page: 0, list: [] }
       },
       currentType: 'pop',
-      isShow: false
+      isShow: false, // 是否显示back2top
+      offsetTop: 0,
+      isfix: false // 是否固定tab-control
     }
   },
   computed: {
@@ -68,6 +78,13 @@ export default {
     this.getHomeGoods('pop')
     this.getHomeGoods('new')
     this.getHomeGoods('sell')
+  },
+  mounted () {
+    const refresh = debounce(this.$refs.scroll1.refresh, 500)
+    // 监听item图片加载完成
+    this.$bus.$on('imageItemLoad', () => {
+      refresh()
+    })
   },
   methods: {
     /**
@@ -85,6 +102,9 @@ export default {
           this.currentType = 'sell'
           break
       }
+      // 同步两个tab状态
+      this.$refs.tabcontrol1.currentType = index
+      this.$refs.tabcontrol2.currentType = index
     },
     getHomeGoods (type) {
       const page = this.goods.pop.page + 1
@@ -106,11 +126,21 @@ export default {
       } else {
         this.isShow = false
       }
+      if ((position.y) < -this.offsetTop) {
+        this.isfix = true
+      } else {
+        this.isfix = false
+      }
     },
+    // 上拉加载更多
     loadMore () {
       this.getHomeGoods(this.currentType)
 
       this.$refs.scroll1.refresh()
+    },
+    swiperImgLoad () {
+      this.offsetTop = this.$refs.tabcontrol2.$el.offsetTop
+      console.log(this.offsetTop)
     }
   }
 }
@@ -120,6 +150,7 @@ export default {
 #home {
   /*padding-top: 44px;*/
   height: 100vh;
+  /*height: calc(100% - 44px);*/
   position: relative;
   /*top: 44px*/
 }
@@ -128,29 +159,28 @@ export default {
   background-color: var(--color-tint);
   color: #fff;
 
-  position: fixed;
-  left: 0;
-  right: 0;
-  top: 0;
-  z-index: 9;
+  /*position: fixed;*/
+  /*left: 0;*/
+  /*right: 0;*/
+  /*top: 0;*/
+  /*z-index: 9;*/
 }
 
-.tab-control {
-  position: sticky;
-  top: 44px;
+.table-control {
+  position: fixed;
   z-index: 9;
 }
 
 .content {
 
   /*overflow: hidden;*/
-  /*position: absolute;*/
+  position: fixed;
   /*top: 44px;*/
   /*bottom: 49px;*/
   /*left: 0;*/
   /*right:0;*/
   height: calc(100% - 93px);
   overflow: hidden;
-  margin-top: 44px;
+  /*margin-top: 44px;*/
 }
 </style>

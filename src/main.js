@@ -7,6 +7,8 @@ import 'element-ui/lib/theme-chalk/index.css'
 Vue.use(ElementUI)
 
 Vue.config.productionTip = false
+// 原型注册$bus
+Vue.prototype.$bus = new Vue()
 
 new Vue({
   router,
