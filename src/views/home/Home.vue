@@ -5,7 +5,7 @@
                :titles="['流行','新款','精选']"
                @tabClick="tabClick" ref="tabcontrol1"
                class="table-control"></tab-control>
-  <scroll class="content" ref="scroll1"
+  <scroll class="content" ref="scroll"
       :probeType="3" :pullUpLoad="true"
       @scrollposition="isShowB2T"
       @pullingUp="loadMore">
@@ -36,7 +36,8 @@ import HomeRecommend from './childs/HomeRecommend'
 import FeatureView from './childs/FeatureView'
 
 import { getHomeMutiData, getHomeGoods } from '../../network/home.js'
-import { debounce } from '../../common/utils'
+// import { debounce } from '../../common/utils'
+import { itemListenerMixin } from '../../common/minin'
 
 export default {
   name: 'Home',
@@ -65,6 +66,7 @@ export default {
       isfix: false // 是否固定tab-control
     }
   },
+  mixins: [itemListenerMixin],
   computed: {
     showGoods () {
       return this.goods[this.currentType].list
@@ -80,11 +82,11 @@ export default {
     this.getHomeGoods('sell')
   },
   mounted () {
-    const refresh = debounce(this.$refs.scroll1.refresh, 500)
-    // 监听item图片加载完成
-    this.$bus.$on('imageItemLoad', () => {
-      refresh()
-    })
+    // const refresh = debounce(this.$refs.scroll.refresh, 500)
+    // // 监听item图片加载完成
+    // this.$bus.$on('imageItemLoad', () => {
+    //   refresh()
+    // })
   },
   methods: {
     /**
@@ -103,8 +105,8 @@ export default {
           break
       }
       // 同步两个tab状态
-      this.$refs.tabcontrol1.currentType = index
-      this.$refs.tabcontrol2.currentType = index
+      this.$refs.tabcontrol1.currentIndex = index
+      this.$refs.tabcontrol2.currentIndex = index
     },
     getHomeGoods (type) {
       const page = this.goods.pop.page + 1
@@ -112,11 +114,11 @@ export default {
         this.goods[type].list.push(...res.data.list)
         this.goods[type].page += 1
 
-        this.$refs.scroll1.finishPullUp()
+        this.$refs.scroll.finishPullUp()
       })
     },
     back2Top () {
-      this.$refs.scroll1.scrollTo(0, 0)
+      this.$refs.scroll.scrollTo(0, 0)
       // this.refs.scroll.scroll.scrollTo(0, 0, 300)
     },
     isShowB2T (position) {
@@ -136,12 +138,16 @@ export default {
     loadMore () {
       this.getHomeGoods(this.currentType)
 
-      this.$refs.scroll1.refresh()
+      this.$refs.scroll.refresh()
     },
     swiperImgLoad () {
       this.offsetTop = this.$refs.tabcontrol2.$el.offsetTop
       console.log(this.offsetTop)
     }
+  },
+  deactivated () {
+    // 2.取消全局事件的监听
+    this.$bus.$off('itemImgLoad', this.itemImgListener)
   }
 }
 </script>
